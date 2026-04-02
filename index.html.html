@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NNA VITTALO — Adventure Travel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+  html {
+  scroll-behavior: smooth;
+}
+
+#trips {
+  scroll-margin-top: 90px; /* This keeps your sticky header from covering the title */
+}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Open Sans', sans-serif; background: #f5f7fc; color: #1a1f36; }
+    html { scroll-behavior: smooth; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f7fc; }
+    ::-webkit-scrollbar-thumb { background: #c0ccee; border-radius: 3px; }
+    @media (max-width: 980px) {
+      .main-wrap-responsive { grid-template-columns: 1fr !important; }
+      .info-sections-responsive { grid-template-columns: 1fr !important; }
+      .trip-card-responsive { grid-template-columns: 1fr !important; }
+      .trip-card-responsive > div:first-child { min-height: 200px !important; }
+      .modal-inner-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 640px) {
+      .main-wrap-responsive { padding: 24px 16px 60px !important; }
+      .info-sections-responsive { padding: 0 16px 60px !important; }
+    }
+    @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+    /* --- New Hamburger Menu Styles --- */
+.hamburger-btn {
+  display: none; /* Hidden on PC */
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 10px;
+  z-index: 1001;
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background: #2952c8;
+  border-radius: 2px;
+  transition: 0.3s;
+}
+
+/* Mobile logic for screens smaller than 980px */
+@media (max-width: 980px) {
+  .hamburger-btn { display: flex; } 
+
+  .nav-menu-container {
+    display: none; /* Hide links by default on mobile */
+    position: absolute;
+    top: 68px; 
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    flex-direction: column;
+    padding: 20px;
+    gap: 15px !important;
+    border-bottom: 3px solid #2952c8;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+    z-index: 1000;
+  }
+
+  /* When React adds the 'open' class, show the menu */
+  .nav-menu-container.open {
+    display: flex;
+  }
+}
+/* Custom fix for the Top Contact Bar */
+@media (max-width: 600px) {
+  .top-contact-bar {
+    padding: 6px 10px !important;
+    gap: 10px !important;
+    justify-content: center !important;
+  }
+  .top-bar-item {
+    font-size: 0.72rem !important; /* Smaller text for mobile */
+  }
+  .top-bar-label {
+    display: none; /* Hides "Call / WhatsApp" to save space */
+  }
+}
+/* This hides the "Call/WhatsApp" text on small phones to keep it on one line */
+@media (max-width: 480px) {
+  .hide-mobile {
+    display: none;
+  }
+  .top-contact-bar {
+    gap: 10px !important;
+    padding: 8px 10px !important;
+  }
+}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const PLN_TO_EUR = 0.23;
+const LOGO_URL = 'https://image2url.com/r2/default/images/1775118561123-c172dd42-cf8b-4c9d-948e-6fd788b51b55.jpg';
+
+const TRIPS = [
+  {
+    id:'t1', title:'Kayaking Getaway — Rivers & Lakes', location:'Masuria Lake District, Poland',
+    photo:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600',
+    emoji:'🛶', emojiBg:'🌊', imgBg:'linear-gradient(145deg,#1565c0,#0d47a1)',
+    badges:[{label:'Beginner',type:'white'},{label:'Available',type:'green'}],
+    tags:[{label:'Kayaking',type:'water'},{label:'Sport',type:'sport'}],
+    features:['📅 2 Days / 1 Night','🛶 Kayak Included','🏕️ Riverside Camp','🎯 Guided Tour'],
+    price:249, included:'Equipment included', durationLabel:'2 Days / 1 Night',
+    desc:'Paddle through scenic rivers and lakes. Suitable for everyone — beginners to experienced paddlers.',
+    activity:'Kayaking', priceRange:'Under 400', durationTag:'Weekend (2–3 days)', difficulty:'Beginner',
+    showPrice:true, tripDate:'17 April 2026',
+  },
+  {
+    id:'t3', title:'Surfing Camp — Catch Your First Wave', location:'Atlantic Coast, Portugal / Spain',
+    photo:'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600',
+    emoji:'🏄', emojiBg:'☀️', imgBg:'linear-gradient(145deg,#1565c0,#2952c8)',
+    badges:[{label:'Popular',type:'blue'},{label:'Coming Soon',type:'dark'}],
+    tags:[{label:'Surfing',type:'water'},{label:'Sport',type:'sport'}],
+    features:['📅 5 Days / 4 Nights','🏄 Board & Wetsuit','🏖️ Beach Accommodation','👨‍🏫 Pro Instructor'],
+    price:899, included:'Equipment included', durationLabel:'5 Days / 4 Nights',
+    desc:'Feel the power of the ocean! A 5-day surf camp with pro instructors. Board, wetsuit and beachside accommodation all included.',
+    activity:'Surfing', priceRange:'700–1000 PLN', durationTag:'Short (4–5 days)', difficulty:'Beginner', comingSoon:true,
+  },
+  {
+    id:'t4', title:'Hiking in Tatra — Mountain Trails', location:'Tatra National Park, Zakopane, Poland',
+    photo:'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600',
+    emoji:'🥾', emojiBg:'🦅', imgBg:'linear-gradient(145deg,#0f3460,#1a5276)',
+    badges:[{label:'Intermediate',type:'white'},{label:'Coming Soon',type:'dark'}],
+    tags:[{label:'Tatra Mts.',type:'tatra'},{label:'Hiking',type:'sport'}],
+    features:['📅 3 Days / 2 Nights','🏔️ Mountain Guide','🏠 Hut Accommodation','🎒 Backpack & Map'],
+    price:399, included:'Guide always included', durationLabel:'3 Days / 2 Nights',
+    desc:'Discover the magic of the Polish mountains. Morskie Oko, Rysy peak, Kościeliska Valley. Experienced guide included.',
+    activity:'Hiking', priceRange:'Under 400', durationTag:'Weekend (2–3 days)', difficulty:'Intermediate', comingSoon:true,
+  },
+  {
+    id:'t2', title:'Ski Trip — Alpine Slopes Adventure', location:'Tatra Mountains / Alps, Poland / Austria',
+    photo:'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600',
+    emoji:'⛷️', emojiBg:'❄️', imgBg:'linear-gradient(145deg,#0d2a8c,#1a3a9e)',
+    badges:[{label:'Best Seller',type:'accent'},{label:'Coming Soon',type:'dark'}],
+    tags:[{label:'Skiing',type:'winter'},{label:'Sport',type:'sport'}],
+    features:['📅 4 Days / 3 Nights','🎿 Lift Pass Included','🏨 Mountain Lodge','👨‍🏫 Ski Instructor','🍽️ Après-ski'],
+    price:999, included:'Skipass always included', durationLabel:'4 Days / 3 Nights',
+    desc:'White slopes, adrenaline and après-ski. Ski school, equipment, lift pass and a cosy mountain lodge in the price.',
+    activity:'Skiing', priceRange:'1000+ PLN', durationTag:'Short (4–5 days)', difficulty:'Intermediate', comingSoon:true,
+  },
+  {
+    id:'t5', title:'Camping Weekend — Stars & Campfire', location:'Polish Countryside / Forests, Poland',
+    photo:'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600',
+    emoji:'🏕️', emojiBg:'🌲', imgBg:'linear-gradient(145deg,#1a3a9e,#2952c8)',
+    badges:[{label:'Beginner',type:'white'},{label:'Coming Soon',type:'dark'}],
+    tags:[{label:'Camping',type:'chill'},{label:'Family',type:'family'}],
+    features:['📅 3 Days / 2 Nights','⛺ Tent & Sleeping Bag','🔥 Campfire Meals','🎮 Outdoor Games'],
+    price:249, included:'Gear included', durationLabel:'3 Days / 2 Nights',
+    desc:'Escape the city for 3 days of wild adventures, bonfires and sleeping under a sky full of stars.',
+    activity:'Camping', priceRange:'Under 400', durationTag:'Weekend (2–3 days)', difficulty:'Beginner', comingSoon:true,
+  },
+  {
+    id:'t6', title:'Auschwitz-Birkenau Cave Tours — Memorial & Museum', location:'Oświęcim, Poland',
+    photo:'https://images.unsplash.com/photo-1540575861501-7cf05a4b125a?w=600',
+    emoji:'🕯️', emojiBg:'🏛️', imgBg:'linear-gradient(145deg,#2d2d2d,#4a4a4a)',
+    badges:[{label:'Historical',type:'dark'},{label:'Coming Soon',type:'dark'}],
+    tags:[{label:'History',type:'culture'},{label:'Memorial',type:'family'}],
+    features:['📅 1 Day Tour','🎟️ Entry Tickets Included','🎤 Expert Historian Guide','🚌 Transport Included'],
+    price:299, included:'Guide & tickets included', durationLabel:'1 Day Tour',
+    desc:'A deeply moving guided tour of the Auschwitz-Birkenau Memorial and Museum. Expert historians guide you through this UNESCO World Heritage site.',
+    activity:'City Tours', priceRange:'Under 400', durationTag:'Weekend (2–3 days)', difficulty:'Beginner', comingSoon:true,
+  },
+];
+
+const GALLERY = {
+  Kayaking:['https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800','https://images.unsplash.com/photo-1473773508845-188df298d2d1?w=400','https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=400','https://images.unsplash.com/photo-1527856263669-12c3a0af2aa6?w=400','https://images.unsplash.com/photo-1601024445121-e294028dce25?w=400'],
+  Skiing:['https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800','https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400','https://images.unsplash.com/photo-1605540436563-5bca919ae766?w=400','https://images.unsplash.com/photo-1586967882046-8dc6b9b3c3ef?w=400','https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400'],
+  Surfing:['https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=800','https://images.unsplash.com/photo-1455264745730-cb3b76250de8?w=400','https://images.unsplash.com/photo-1531722569936-825d4ebd0de9?w=400','https://images.unsplash.com/photo-1509914398892-963f53e6e2f1?w=400','https://images.unsplash.com/photo-1520045892732-304bc3ac5d8e?w=400'],
+  Hiking:['https://images.unsplash.com/photo-1551632811-561732d1e306?w=800','https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400','https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=400','https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400','https://images.unsplash.com/photo-1455156218388-5e61b526818b?w=400'],
+  Camping:['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800','https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=400','https://images.unsplash.com/photo-1537905569824-f89f14cceb68?w=400','https://images.unsplash.com/photo-1533575770077-052fa2c609fc?w=400','https://images.unsplash.com/photo-1487730116645-74489c55bc79?w=400'],
+  default:['https://images.unsplash.com/photo-1540575861501-7cf05a4b125a?w=800','https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=400','https://images.unsplash.com/photo-1534430480872-3498386e7856?w=400','https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=400','https://images.unsplash.com/photo-1566438480900-0609be27a4be?w=400'],
+};
+
+const tagStyles = {
+  water:{background:'#e0f2fe',color:'#0369a1'},
+  sport:{background:'#e8eefb',color:'#2952c8'},
+  winter:{background:'#eef2ff',color:'#3730a3'},
+  tatra:{background:'#f0fdf4',color:'#166534'},
+  chill:{background:'#e8faf0',color:'#166534'},
+  family:{background:'#fef3e8',color:'#c05900'},
+  culture:{background:'#fefce8',color:'#854d0e'},
+};
+
+function badgeStyle(type) {
+  const map={blue:{background:'#2952c8',color:'#fff'},white:{background:'#fff',color:'#2952c8'},accent:{background:'#ff6b35',color:'#fff'},green:{background:'#22c55e',color:'#fff'},dark:{background:'#0f2266',color:'#fff'}};
+  return map[type]||map.blue;
+}
+
+/* ── TripCard ── */
+function TripCard({trip, onBook}) {
+  const [hovered, setHovered] = useState(false);
+  const price = trip.price || 0;
+  const eur = Math.round(price * PLN_TO_EUR);
+  const showPrice = trip.showPrice === true;
+  return (
+    <div
+      onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}
+      className="trip-card-responsive"
+      style={{background:'#fff',border:'1px solid #dde4f5',borderRadius:14,overflow:'hidden',
+        boxShadow:hovered?'0 8px 40px rgba(41,82,200,0.18)':'0 2px 16px rgba(41,82,200,0.10)',
+        display:'grid',gridTemplateColumns:'300px 1fr',
+        transform:hovered?'translateY(-2px)':'none',transition:'box-shadow 0.2s,transform 0.2s',cursor:'pointer'}}
+    >
+      {/* Image Panel */}
+      <div style={{position:'relative',minHeight:220,background:trip.imgBg||'linear-gradient(145deg,#1a3a9e,#2952c8)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+        {trip.photo ? (
+          <img src={trip.photo} alt={trip.title} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} />
+        ) : (
+          <>
+            <span style={{fontSize:'7rem',opacity:0.25,position:'absolute'}}>{trip.emojiBg}</span>
+            <span style={{fontSize:'5rem',position:'relative',zIndex:1,filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'}}>{trip.emoji}</span>
+          </>
+        )}
+        <div style={{position:'absolute',top:12,left:12,display:'flex',flexDirection:'column',gap:6,zIndex:2}}>
+          {(trip.badges||[]).map(b=>(
+            <span key={b.label} style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.68rem',fontWeight:700,padding:'4px 10px',borderRadius:4,letterSpacing:'0.5px',textTransform:'uppercase',...badgeStyle(b.type)}}>{b.label}</span>
+          ))}
+        </div>
+        {showPrice && trip.tripDate && (
+          <div style={{position:'absolute',bottom:12,right:12,background:'#0f2266',color:'#fff',fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.68rem',padding:'4px 10px',borderRadius:4,letterSpacing:'0.5px',textTransform:'uppercase',zIndex:2}}>
+            📅 {trip.tripDate}
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div style={{padding:'24px 28px',display:'flex',flexDirection:'column'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,flexWrap:'wrap'}}>
+          {(trip.tags||[]).map(t=>(
+            <span key={t.label} style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.7rem',fontWeight:700,padding:'3px 10px',borderRadius:4,textTransform:'uppercase',letterSpacing:'0.5px',...(tagStyles[t.type]||tagStyles.sport)}}>{t.label}</span>
+          ))}
+        </div>
+        <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:800,fontSize:'1.15rem',color:'#1a1f36',marginBottom:6,lineHeight:1.3}}>{trip.title}</div>
+        <div style={{fontSize:'0.83rem',color:'#7a8599',fontWeight:500,display:'flex',alignItems:'center',gap:5,marginBottom:4}}>📍 {trip.location}</div>
+        {showPrice && trip.tripDate && (
+          <div style={{fontSize:'0.78rem',color:'#2952c8',fontWeight:600,marginBottom:14}}>📅 {trip.tripDate}</div>
+        )}
+        {!showPrice && (
+          <div style={{fontSize:'0.78rem',color:'#a8c4ff',fontWeight:600,marginBottom:14}}>📅 ** **** ****</div>
+        )}
+        {showPrice && !trip.tripDate && <div style={{marginBottom:14}} />}
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
+          {(trip.features||[]).map((f,i)=>(
+            <span key={i} style={{fontSize:'0.75rem',fontWeight:600,color:'#4a5568',background:'#f5f7fc',border:'1px solid #dde4f5',padding:'4px 10px',borderRadius:50}}>{f}</span>
+          ))}
+        </div>
+        <div style={{marginTop:'auto',display:'flex',alignItems:'flex-end',justifyContent:'space-between',paddingTop:16,borderTop:'1px solid #dde4f5'}}>
+          <div>
+            <div style={{fontSize:'0.72rem',fontWeight:600,color:'#7a8599',textTransform:'uppercase',letterSpacing:'0.5px'}}>Starting from</div>
+            {showPrice ? (
+              <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.7rem',color:'#2952c8',lineHeight:1}}>
+                {price} <span style={{fontSize:'0.9rem',fontWeight:700}}>PLN</span>
+                <span style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.7rem',color:'#2952c8',marginLeft:6}}>/ {eur} <span style={{fontSize:'0.9rem',fontWeight:700}}>EUR</span></span>
+              </div>
+            ) : (
+              <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.7rem',color:'#2952c8',lineHeight:1}}>
+                *** <span style={{fontSize:'0.9rem',fontWeight:700}}>PLN</span>
+                <span style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.7rem',color:'#2952c8',marginLeft:6}}>/ *** <span style={{fontSize:'0.9rem',fontWeight:700}}>EUR</span></span>
+              </div>
+            )}
+            <div style={{fontSize:'0.72rem',color:'#4a5568',marginTop:4}}>all inclusive</div>
+            <div style={{fontSize:'0.72rem',fontWeight:700,color:'#22c55e',display:'flex',alignItems:'center',gap:4,marginTop:4}}>✓ {trip.included}</div>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'flex-end'}}>
+            <button onClick={()=>onBook(trip)} style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.82rem',background:'#2952c8',color:'#fff',padding:'10px 22px',borderRadius:8,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#1a3a9e'} onMouseLeave={e=>e.currentTarget.style.background='#2952c8'}>Book Now</button>
+            <button onClick={()=>onBook(trip)} style={{fontFamily:'Montserrat,sans-serif',fontWeight:600,fontSize:'0.78rem',color:'#2952c8',background:'#e8eefb',padding:'8px 22px',borderRadius:8,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#d0dcf8'} onMouseLeave={e=>e.currentTarget.style.background='#e8eefb'}>View Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── BookingModal ── */
+function BookingModal({trip, onClose, onToast}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [guests, setGuests] = useState('1 person');
+  if (!trip) return null;
+  const gallery = GALLERY[trip.activity] || GALLERY.default;
+  const showPrice = trip.showPrice === true;
+  const chosenPrice = trip.price;
+  const chosenEur = Math.round(chosenPrice * PLN_TO_EUR);
+  const displayDate = trip.tripDate || '** **** ****';
+  const amenities = ['✅ '+(trip.included||'Equipment included'),'✅ Professional guide / instructor','✅ Accommodation included','✅ Meals & snacks','✅ Safety gear & insurance','✅ Transport from meeting point'];
+
+  const confirm = () => {
+    window.open('https://wa.me/48729648977', '_blank');
+    onClose();
+  };
+
+  return (
+    <div onClick={e=>{if(e.target===e.currentTarget)onClose();}}
+      style={{position:'fixed',inset:0,background:'rgba(15,34,102,0.75)',zIndex:1000,display:'flex',alignItems:'flex-start',justifyContent:'center',overflowY:'auto',backdropFilter:'blur(4px)',padding:'24px 16px'}}>
+      <div style={{background:'#f5f7fc',borderRadius:16,maxWidth:1000,width:'100%',boxShadow:'0 24px 80px rgba(15,34,102,0.35)',animation:'slideUp 0.3s ease-out',position:'relative',marginBottom:24}}>
+        <div style={{background:'#0f2266',borderRadius:'16px 16px 0 0',padding:'20px 28px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <div style={{fontSize:'2.2rem'}}>{trip.emoji}</div>
+            <div>
+              <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.3rem',color:'#fff'}}>{trip.title}</div>
+              <div style={{fontSize:'0.82rem',color:'rgba(255,255,255,0.7)',marginTop:2}}>📍 {trip.location} · 🏷️ {trip.activity} · 📅 {trip.durationLabel}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',width:36,height:36,borderRadius:'50%',cursor:'pointer',fontSize:'1.1rem',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+        </div>
+
+        <div className="modal-inner-grid" style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:0}}>
+          <div style={{padding:'28px',borderRight:'1px solid #dde4f5'}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gridTemplateRows:'220px 110px',gap:6,marginBottom:24,borderRadius:10,overflow:'hidden'}}>
+              <img src={gallery[0]} alt="" style={{gridRow:'1 / 3',width:'100%',height:'100%',objectFit:'cover'}} />
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                {gallery.slice(1,5).map((img,i)=><img key={i} src={img} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} />)}
+              </div>
+            </div>
+            <h3 style={{fontFamily:'Montserrat,sans-serif',fontWeight:800,fontSize:'1.1rem',color:'#0f2266',marginBottom:10}}>Feel the thrill of the wild 🌿</h3>
+            <p style={{fontSize:'0.9rem',color:'#4a5568',lineHeight:1.75,marginBottom:16}}>{trip.desc} Whether you're a first-timer or a seasoned adventurer, this package is carefully designed to deliver an unforgettable experience.</p>
+            <h4 style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.85rem',color:'#1a1f36',marginBottom:10,textTransform:'uppercase',letterSpacing:1}}>Most Popular Amenities</h4>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
+              {amenities.map(a=><div key={a} style={{fontSize:'0.85rem',color:'#1a1f36',background:'#e8eefb',padding:'8px 12px',borderRadius:8}}>{a}</div>)}
+            </div>
+            <h4 style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.85rem',color:'#1a1f36',marginBottom:12,textTransform:'uppercase',letterSpacing:1}}>Trip Date</h4>
+            <div style={{background:'#e8eefb',border:'1px solid #d0dcf8',borderRadius:10,padding:'14px 20px',display:'flex',alignItems:'center',gap:12}}>
+              <span style={{fontSize:'1.4rem'}}>📅</span>
+              <div>
+                <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:800,fontSize:'1rem',color:'#0f2266'}}>{showPrice ? displayDate : '** **** ****'}</div>
+                <div style={{fontSize:'0.78rem',color:'#4a5568',marginTop:2}}>Departure date</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{padding:'28px 20px'}}>
+            <div style={{position:'sticky',top:24}}>
+              <div style={{background:'#fff',border:'1.5px solid #dde4f5',borderRadius:12,padding:'20px',marginBottom:16,boxShadow:'0 2px 16px rgba(41,82,200,0.10)'}}>
+                <div style={{fontSize:'0.72rem',fontWeight:600,color:'#7a8599',textTransform:'uppercase',letterSpacing:1,marginBottom:4}}>Total price</div>
+                {showPrice ? (
+                  <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'2rem',color:'#2952c8',lineHeight:1}}>
+                    {chosenPrice} <span style={{fontSize:'1rem'}}>PLN</span>
+                    <span style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'2rem',color:'#2952c8',marginLeft:8}}>/ {chosenEur} <span style={{fontSize:'1rem'}}>EUR</span></span>
+                  </div>
+                ) : (
+                  <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'2rem',color:'#2952c8',lineHeight:1}}>
+                    *** <span style={{fontSize:'1rem'}}>PLN</span>
+                    <span style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'2rem',color:'#2952c8',marginLeft:8}}>/ *** <span style={{fontSize:'1rem'}}>EUR</span></span>
+                  </div>
+                )}
+                <div style={{fontSize:'0.78rem',color:'#7a8599',marginBottom:16,marginTop:4}}>✓ {trip.included||'Equipment & guide included'}</div>
+                <label style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.7rem',fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:5}}>Your Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full name" style={{width:'100%',padding:'9px 12px',border:'1.5px solid #dde4f5',borderRadius:8,fontSize:'0.85rem',marginBottom:10,boxSizing:'border-box',fontFamily:'Open Sans,sans-serif'}} />
+                <label style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.7rem',fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:5}}>Email</label>
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" style={{width:'100%',padding:'9px 12px',border:'1.5px solid #dde4f5',borderRadius:8,fontSize:'0.85rem',marginBottom:10,boxSizing:'border-box',fontFamily:'Open Sans,sans-serif'}} />
+                <label style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.7rem',fontWeight:700,color:'#4a5568',textTransform:'uppercase',letterSpacing:1,display:'block',marginBottom:5}}>Guests</label>
+                <select value={guests} onChange={e=>setGuests(e.target.value)} style={{width:'100%',padding:'9px 12px',border:'1.5px solid #dde4f5',borderRadius:8,fontSize:'0.85rem',marginBottom:16,boxSizing:'border-box',fontFamily:'Open Sans,sans-serif'}}>
+                  {['1 person','2 people','3 people','4 people','5–8 people','9+ people'].map(o=><option key={o}>{o}</option>)}
+                </select>
+                <button onClick={confirm} style={{width:'100%',background:'#2952c8',color:'#fff',border:'none',padding:'13px',borderRadius:10,fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.88rem',cursor:'pointer'}}
+                  onMouseEnter={e=>e.currentTarget.style.background='#1a3a9e'} onMouseLeave={e=>e.currentTarget.style.background='#2952c8'}>
+                  🎉 Book Your Spot
+                </button>
+                <p style={{fontSize:'0.72rem',color:'#7a8599',textAlign:'center',marginTop:10}}>Free cancellation up to 7 days before departure</p>
+              </div>
+              <div style={{background:'#e8eefb',borderRadius:10,padding:'14px',fontSize:'0.8rem',color:'#2952c8',fontWeight:600,textAlign:'center'}}>
+                🏆 Trusted by 150+ adventurers<br/><span style={{fontWeight:400,color:'#4a5568'}}>4.9 ⭐ average rating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── FiltersSidebar ── */
+const ACTIVITY_TYPES = ['Kayaking','Skiing','Surfing','Hiking','Camping','City Tours'];
+const DURATIONS = ['Weekend (2–3 days)','Short (4–5 days)','Week (6–7 days)'];
+const PRICES = ['Under 400','400–700 PLN','700–1000 PLN','1000+ PLN'];
+const DIFFICULTIES = ['All','Beginner','Intermediate','Advanced'];
+
+function FiltersSidebar({onFilterChange, onShowToast}) {
+  const [open, setOpen] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [selDurations, setSelDurations] = useState([]);
+  const [selPrices, setSelPrices] = useState([]);
+  const [selDiffs, setSelDiffs] = useState([]);
+
+  const toggle = (arr, val) => arr.includes(val) ? arr.filter(x=>x!==val) : [...arr, val];
+  const emit = (a,d,p,diff) => onFilterChange({activities:a,durations:d,prices:p,difficulties:diff});
+
+  const tA = v => { const n=toggle(activities,v); setActivities(n); emit(n,selDurations,selPrices,selDiffs); };
+  const tD = v => { const n=toggle(selDurations,v); setSelDurations(n); emit(activities,n,selPrices,selDiffs); };
+  const tP = v => { const n=toggle(selPrices,v); setSelPrices(n); emit(activities,selDurations,n,selDiffs); };
+  const tDiff = v => {
+    if(v==='All'){setSelDiffs([]);emit(activities,selDurations,selPrices,[]);}
+    else{const n=toggle(selDiffs,v);setSelDiffs(n);emit(activities,selDurations,selPrices,n);}
+  };
+  const clearAll = () => {setActivities([]);setSelDurations([]);setSelPrices([]);setSelDiffs([]);emit([],[],[],[]);onShowToast('Filters cleared.');};
+  const totalActive = activities.length+selDurations.length+selPrices.length+selDiffs.length;
+
+  return (
+    <aside style={{background:'#fff',border:'1px solid #dde4f5',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 16px rgba(41,82,200,0.10)',position:'sticky',top:88,alignSelf:'start'}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{background:'#2952c8',padding:'18px 22px',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',userSelect:'none'}}>
+        <h3 style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.88rem',color:'#fff',letterSpacing:1,textTransform:'uppercase',margin:0}}>🔍 Filters</h3>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          {totalActive > 0 && (
+            <button onClick={e=>{e.stopPropagation();clearAll();}} style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.72rem',fontWeight:600,color:'rgba(255,255,255,0.75)',textDecoration:'underline',cursor:'pointer',background:'none',border:'none'}}>Clear</button>
+          )}
+          <span style={{color:'#fff',fontSize:'0.9rem',display:'inline-block',transform:open?'rotate(180deg)':'rotate(0deg)',transition:'transform 0.2s'}}>▼</span>
+        </div>
+      </div>
+      {open && (
+        <>
+          <div style={{borderBottom:'1px solid #dde4f5',padding:'18px 22px'}}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.75rem',color:'#4a5568',textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Activity Type</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {ACTIVITY_TYPES.map(a=>(
+                <label key={a} style={{display:'flex',alignItems:'center',gap:10,fontSize:'0.85rem',fontWeight:500,color:activities.includes(a)?'#2952c8':'#1a1f36',cursor:'pointer',padding:'4px 0'}}>
+                  <input type="checkbox" checked={activities.includes(a)} onChange={()=>tA(a)} style={{accentColor:'#2952c8',width:16,height:16,cursor:'pointer'}} />{a}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{borderBottom:'1px solid #dde4f5',padding:'18px 22px'}}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.75rem',color:'#4a5568',textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Duration</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {DURATIONS.map(d=>(
+                <label key={d} style={{display:'flex',alignItems:'center',gap:10,fontSize:'0.85rem',fontWeight:500,color:selDurations.includes(d)?'#2952c8':'#1a1f36',cursor:'pointer',padding:'4px 0'}}>
+                  <input type="checkbox" checked={selDurations.includes(d)} onChange={()=>tD(d)} style={{accentColor:'#2952c8',width:16,height:16,cursor:'pointer'}} />{d}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{borderBottom:'1px solid #dde4f5',padding:'18px 22px'}}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.75rem',color:'#4a5568',textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Price Range (PLN / person)</div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {PRICES.map(p=>(
+                <label key={p} style={{display:'flex',alignItems:'center',gap:10,fontSize:'0.85rem',fontWeight:500,color:selPrices.includes(p)?'#2952c8':'#1a1f36',cursor:'pointer',padding:'4px 0'}}>
+                  <input type="checkbox" checked={selPrices.includes(p)} onChange={()=>tP(p)} style={{accentColor:'#2952c8',width:16,height:16,cursor:'pointer'}} />{p}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{padding:'18px 22px'}}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.75rem',color:'#4a5568',textTransform:'uppercase',letterSpacing:1,marginBottom:12}}>Difficulty</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
+              {DIFFICULTIES.map(d=>(
+                <button key={d} onClick={()=>tDiff(d)} style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.72rem',fontWeight:600,padding:'5px 12px',borderRadius:50,border:`1.5px solid ${(d==='All'?selDiffs.length===0:selDiffs.includes(d))?'#2952c8':'#dde4f5'}`,cursor:'pointer',background:(d==='All'?selDiffs.length===0:selDiffs.includes(d))?'#2952c8':'#fff',color:(d==='All'?selDiffs.length===0:selDiffs.includes(d))?'#fff':'#4a5568'}}>{d}</button>
+              ))}
+            </div>
+          </div>
+          <button onClick={()=>onShowToast('✅ Filters applied!')} style={{display:'block',width:'calc(100% - 44px)',margin:'0 22px 18px',background:'#2952c8',color:'#fff',border:'none',padding:12,borderRadius:8,fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.85rem',cursor:'pointer'}}
+            onMouseEnter={e=>e.currentTarget.style.background='#1a3a9e'} onMouseLeave={e=>e.currentTarget.style.background='#2952c8'}>Show Results</button>
+        </>
+      )}
+    </aside>
+  );
+}
+
+/* ── Navbar ── */
+function Navbar({onAuthClick}) {
+  // Use the state you already found!
+  const [tripsOpen, setTripsOpen] = useState(false);
+
+  const linkStyle = {
+    fontFamily: 'Montserrat, sans-serif',
+    fontWeight: 700,
+    fontSize: '0.82rem',
+    color: '#4a5568',
+    textDecoration: 'none',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  };
+
+  return (
+    <nav style={{background:'#fff', borderBottom:'3px solid #2952c8', position:'sticky', top:0, zIndex:200, boxShadow:'0 2px 16px rgba(41,82,200,0.10)'}}>
+      <div style={{maxWidth:1260, margin:'0 auto', display:'flex', alignItems:'center', padding:'0 32px', height:68}}>
+        
+        {/* LOGO */}
+        <a href="#" style={{display:'flex', alignItems:'center', textDecoration:'none'}}>
+          <div style={{width:42, height:42, borderRadius:10, background:'#2952c8', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', marginRight:12}}>
+            <img src={LOGO_URL} alt="Logo" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+          </div>
+          <span style={{fontFamily:'Montserrat, sans-serif', fontWeight:900, fontSize:'1.3rem', color:'#0f2266'}}>NNA VITTALO</span>
+        </a>
+
+        {/* 1. NEW HAMBURGER BUTTON (On the right) */}
+        <button className="hamburger" onClick={() => setTripsOpen(!tripsOpen)}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        {/* 2. THE TABS (They switch to mobile mode automatically) */}
+        <div className={`nav-tabs ${tripsOpen ? 'show-mobile' : ''}`} style={{display:'flex', alignItems:'center', gap:30, marginLeft:'auto'}}>
+          <a href="#" style={linkStyle} onClick={() => setTripsOpen(false)}>Home</a>
+          <a href="#trips" style={linkStyle} onClick={() => setTripsOpen(false)}>Destinations</a>
+          <a href="#ourstory" style={linkStyle} onClick={() => setTripsOpen(false)}>Our Story</a>
+          <a href="#contact" style={linkStyle} onClick={() => setTripsOpen(false)}>Contact</a>
+          <button 
+            onClick={() => { onAuthClick(); setTripsOpen(false); }} 
+            style={{...linkStyle, background:'#2952c8', color:'#fff', padding:'10px 22px', borderRadius:8, border:'none', cursor:'pointer'}}
+          >
+            Login
+          </button>
+        </div>
+
+      </div>
+    </nav>
+  );
+}
+
+/* ── Topbar ── */
+function Topbar() {
+  return (
+    <div className="top-contact-bar" style={{
+  background: '#0d2a8c', 
+  color: '#fff', 
+  padding: '10px 20px', 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center', 
+  gap: '15px', 
+  flexWrap: 'wrap', 
+  zIndex: 300, 
+  position: 'relative'
+}}>
+<div style={{display:'flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:500}}>
+    <span>📧</span> All passes included
+  </div>
+  <div style={{display:'flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:500}}>
+    <span>✨</span> info@nnavittalo.com
+  </div>
+  <div style={{display:'flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:500}}>
+    <span>📞</span> <span className="hide-mobile" style={{opacity:0.8}}>Call / WhatsApp:</span> +48 729 648 977
+  </div>
+</div>
+  );
+}
+
+/* ── Footer ── */
+function Footer() {
+  return (
+    <footer style={{background:'#0f2266',color:'#fff',padding:'56px 32px 32px'}}>
+      <div style={{maxWidth:1260,margin:'0 auto',display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:32,marginBottom:48}}>
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+            <div style={{width:42,height:42,borderRadius:8,overflow:'hidden',flexShrink:0}}>
+              <img src={LOGO_URL} alt="NNA VITTALO" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+            </div>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'1.15rem',letterSpacing:2}}>NNA VITTALO</div>
+          </div>
+          <p style={{fontSize:'0.85rem',color:'rgba(255,255,255,0.6)',lineHeight:1.7,maxWidth:280}}>Europe's premier adventure travel operator. Skipass, equipment and guides always included.</p>
+        </div>
+        {[
+          {title:'Trips',links:['Kayaking Getaway','Surfing Camp','Hiking in Tatra','Ski Trip','Camping Weekend','Auschwitz-Birkenau Tour']},
+          {title:'Company',links:['About Us','Our Guides','Sustainability','Press & Media','Careers']},
+          {title:'Support',links:['FAQ','Contact Us','Booking Policy','Terms & Conditions','Privacy Policy']},
+        ].map(c=>(
+          <div key={c.title}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.78rem',color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:1,marginBottom:14}}>{c.title}</div>
+            {c.links.map(l=><a key={l} href="#" style={{display:'block',fontSize:'0.85rem',color:'rgba(255,255,255,0.75)',textDecoration:'none',marginBottom:8}}
+              onMouseEnter={e=>e.currentTarget.style.color='#fff'} onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.75)'}>{l}</a>)}
+          </div>
+        ))}
+      </div>
+      <div style={{borderTop:'1px solid rgba(255,255,255,0.1)',paddingTop:24,display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}}>
+        <div style={{fontSize:'0.8rem',color:'rgba(255,255,255,0.4)'}}>© 2025 NNA VITTALO. All rights reserved.</div>
+        <div style={{display:'flex',gap:16}}>
+          {['Privacy','Terms','Legal'].map(l=><a key={l} href="#" style={{fontSize:'0.8rem',color:'rgba(255,255,255,0.4)',textDecoration:'none'}}>{l}</a>)}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+/* ── Main App ── */
+function App() {
+  const [activeSort, setActiveSort] = useState('Upcoming');
+  const [modalTrip, setModalTrip] = useState(null);
+  const [toast, setToast] = useState({msg:'',show:false});
+  const [nlEmail, setNlEmail] = useState('');
+  const [filters, setFilters] = useState({activities:[],durations:[],prices:[],difficulties:[]});
+
+  const sortOptions = ['Upcoming','Price ↑','Most Popular'];
+
+  const filteredTrips = useMemo(() => {
+    const {activities,durations,prices,difficulties} = filters;
+    const noFilters = !activities.length && !durations.length && !prices.length && !difficulties.length;
+    if (noFilters) return TRIPS;
+    return TRIPS.filter(t => {
+      if (activities.length && !activities.includes(t.activity)) return false;
+      if (durations.length && !durations.includes(t.durationTag)) return false;
+      if (prices.length && !prices.includes(t.priceRange)) return false;
+      if (difficulties.length && !difficulties.includes(t.difficulty)) return false;
+      return true;
+    });
+  }, [filters]);
+
+  const sortedTrips = useMemo(() => {
+    if (activeSort === 'Price ↑') return [...filteredTrips].sort((a,b)=>a.price-b.price);
+    return filteredTrips;
+  }, [filteredTrips, activeSort]);
+
+  const showToast = msg => { setToast({msg,show:true}); setTimeout(()=>setToast(t=>({...t,show:false})),4000); };
+  const subscribeNewsletter = () => {
+    if (!nlEmail || !nlEmail.includes('@')) { showToast('⚠️ Please enter a valid email address.'); return; }
+    setNlEmail(''); showToast('✅ Subscribed! Welcome to the NNA VITTALO community 🏔️');
+  };
+
+  return (
+    <div>
+      <Topbar />
+      <Navbar onAuthClick={()=>showToast('🔐 Login is available on the live platform!')} />
+
+      {/* HERO */}
+      <section id="hero" style={{background:'linear-gradient(135deg,#0f2266 0%,#2952c8 50%,#4a72e8 100%)',padding:'72px 32px 80px',textAlign:'center',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}} />
+        <div style={{position:'absolute',bottom:0,left:0,right:0,height:120,pointerEvents:'none'}}>
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none" style={{width:'100%',height:'100%'}}>
+            <path d="M0 120L180 40L320 90L480 20L640 70L800 10L960 60L1120 30L1280 80L1440 50V120H0Z" fill="#f5f7fc" />
+          </svg>
+        </div>
+        <div style={{position:'relative',zIndex:2,maxWidth:720,margin:'0 auto'}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.3)',color:'#fff',fontFamily:'Montserrat,sans-serif',fontWeight:600,fontSize:'0.78rem',padding:'6px 16px',borderRadius:50,letterSpacing:'1.5px',textTransform:'uppercase',marginBottom:20}}>
+            🏆 Europe's Premier Adventure Operator
+          </div>
+          <h1 style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'clamp(2.2rem,5vw,3.6rem)',color:'#fff',lineHeight:1.15,marginBottom:16,letterSpacing:'-0.5px'}}>
+            Your Next<br /><span style={{color:'#a8c4ff'}}>Epic Adventure</span><br />Starts with<br /><span style={{color:'#a8c4ff'}}>NNA VITTALO</span>
+          </h1>
+          <p style={{fontSize:'1.05rem',color:'rgba(255,255,255,0.82)',maxWidth:580,margin:'0 auto 36px',lineHeight:1.7}}>
+            From mountain peaks to ocean waves — we craft unforgettable travel and adventure packages. Skipass, equipment, guides and accommodation always included.
+          </p>
+          <div style={{display:'flex',justifyContent:'center',gap:48,flexWrap:'wrap',paddingTop:32,paddingBottom:32,borderTop:'1px solid rgba(255,255,255,0.2)'}}>
+            {[{num:'150+',lbl:'Happy Adventurers'},{num:'3+',lbl:'Destinations'},{num:'1 yr',lbl:'Experience'},{num:'4.9 ⭐',lbl:'Average Rating'}].map(s=>(
+              <div key={s.lbl} style={{textAlign:'center'}}>
+                <span style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'2rem',color:'#fff',display:'block',lineHeight:1}}>{s.num}</span>
+                <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.65)',fontWeight:600,letterSpacing:'0.5px',marginTop:4,display:'block'}}>{s.lbl}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BANNER */}
+      <div style={{background:'linear-gradient(90deg,#2952c8 0%,#4a72e8 100%)',color:'#fff',textAlign:'center',padding:'14px 32px',fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.88rem',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+        <span style={{background:'#fff',color:'#2952c8',padding:'3px 12px',borderRadius:50,fontSize:'0.75rem',fontWeight:800,letterSpacing:1,textTransform:'uppercase'}}>Always Included</span>
+        Skipass, equipment &amp; guide are included in every package price — no hidden extras!
+      </div>
+
+      {/* MAIN */}
+      <div id="packages" className="main-wrap-responsive" style={{maxWidth:1260,margin:'0 auto',display:'grid',gridTemplateColumns:'280px 1fr',gap:32,padding:'40px 32px 80px',alignItems:'start'}}>
+        <FiltersSidebar onShowToast={showToast} onFilterChange={setFilters} />
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap',gap:12}}>
+            <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.88rem',color:'#4a5568'}}>
+              Showing <span style={{color:'#2952c8'}}>{sortedTrips.length} trip{sortedTrips.length!==1?'s':''}</span> available
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:'0.82rem',fontWeight:600,color:'#4a5568'}}>Sort:</span>
+              <div style={{display:'flex',gap:4}}>
+                {sortOptions.map(s=>(
+                  <button key={s} onClick={()=>setActiveSort(s)} style={{fontFamily:'Montserrat,sans-serif',fontSize:'0.75rem',fontWeight:600,padding:'6px 14px',borderRadius:6,border:`1.5px solid ${activeSort===s?'#2952c8':'#dde4f5'}`,background:activeSort===s?'#2952c8':'#fff',color:activeSort===s?'#fff':'#4a5568',cursor:'pointer'}}>{s}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div id="trips" style={{display:'flex',flexDirection:'column',gap:20}}>
+            {sortedTrips.length===0
+              ? <div style={{background:'#fff',border:'1px solid #dde4f5',borderRadius:14,padding:48,textAlign:'center',color:'#7a8599',fontFamily:'Montserrat,sans-serif',fontWeight:600}}>No trips match your filters.</div>
+              : sortedTrips.map(t=><TripCard key={t.id} trip={t} onBook={setModalTrip} />)}
+          </div>
+        </div>
+      </div>
+
+      {/* INFO */}
+      <div id="ourstory" className="info-sections-responsive" style={{maxWidth:1260,margin:'0 auto',padding:'0 32px 80px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:32}}>
+        {[
+          {icon:'🏔️',title:'Adventure Trips — Mountains & Trails',text:'NNA VITTALO has been organising adventure travel packages for over 1 year. From the iconic Tatra Mountains to the Alpine slopes of Austria, every trip is built around your passion for the outdoors. Our mountain trips include an experienced guide, all necessary equipment, accommodation and full board.'},
+          {icon:'🌊',title:'Water Sports — Surf, Kayak & Sail',text:'From the calm lakes of Masuria to the powerful Atlantic swells of Portugal, NNA VITTALO offers water sports experiences for every level. Each package includes professional instruction, certified safety equipment and accommodation near the water. Our instructors are accredited and experienced with first-time participants.'},
+        ].map(c=>(
+          <div key={c.title} style={{background:'#fff',border:'1px solid #dde4f5',borderRadius:14,padding:36,boxShadow:'0 2px 16px rgba(41,82,200,0.10)',position:'relative',overflow:'hidden'}}>
+            <div style={{position:'absolute',top:0,left:0,right:0,height:4,background:'linear-gradient(90deg,#2952c8 0%,#4a72e8 100%)'}} />
+            <div style={{fontSize:'2.5rem',marginBottom:16}}>{c.icon}</div>
+            <h2 style={{fontFamily:'Montserrat,sans-serif',fontWeight:800,fontSize:'1.25rem',color:'#1a1f36',marginBottom:12,lineHeight:1.3}}>{c.title}</h2>
+            <p style={{fontSize:'0.9rem',color:'#4a5568',lineHeight:1.75}}>{c.text}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CONTACT */}
+      <section id="contact" style={{background:'linear-gradient(135deg,#0f2266,#2952c8)',padding:'56px 32px',textAlign:'center'}}>
+        <div style={{maxWidth:800,margin:'0 auto'}}>
+          <h2 style={{fontFamily:'Montserrat,sans-serif',fontWeight:900,fontSize:'clamp(1.6rem,3vw,2.2rem)',color:'#fff',marginBottom:12}}>Questions? Get in Touch! 🗺️</h2>
+          <p style={{color:'rgba(255,255,255,0.78)',fontSize:'0.95rem',marginBottom:32}}>Looking for a custom trip, group booking or just want to know more? Our team is here to help plan your perfect adventure.</p>
+          <div style={{display:'flex',justifyContent:'center',gap:24,flexWrap:'wrap',marginBottom:36}}>
+            {[{icon:'📧',label:'Email Us',val:'info@nnavittalo.com',href:'mailto:info@nnavittalo.com'},{icon:'📞',label:'Call / WhatsApp Us',val:'+48729648977',href:'https://wa.me/48729648977'}].map(c=>(
+              <a key={c.label} href={c.href} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:12,background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.2)',borderRadius:10,padding:'14px 22px',textDecoration:'none',color:'#fff'}}>
+                <span style={{fontSize:'1.4rem'}}>{c.icon}</span>
+                <div style={{textAlign:'left'}}>
+                  <div style={{fontSize:'0.7rem',color:'rgba(255,255,255,0.6)',fontWeight:600,textTransform:'uppercase',letterSpacing:1}}>{c.label}</div>
+                  <div style={{fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.92rem'}}>{c.val}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+          <p style={{fontSize:'0.82rem',marginBottom:10,color:'rgba(255,255,255,0.6)'}}>Join our newsletter — be the first to hear about new trips, discounts and adventures!</p>
+          <div style={{maxWidth:480,margin:'0 auto',display:'flex',gap:8}}>
+            <input type="email" placeholder="Your email address..." value={nlEmail} onChange={e=>setNlEmail(e.target.value)}
+              style={{flex:1,padding:'12px 18px',borderRadius:8,border:'2px solid rgba(255,255,255,0.3)',background:'rgba(255,255,255,0.1)',color:'#fff',fontSize:'0.88rem',fontFamily:'Open Sans,sans-serif',outline:'none'}} />
+            <button onClick={subscribeNewsletter} style={{padding:'12px 22px',background:'#fff',color:'#2952c8',border:'none',borderRadius:8,fontFamily:'Montserrat,sans-serif',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',whiteSpace:'nowrap'}}>Subscribe</button>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+
+      {modalTrip && <BookingModal trip={modalTrip} onClose={()=>setModalTrip(null)} onToast={showToast} />}
+
+      <div style={{position:'fixed',bottom:28,left:'50%',transform:`translateX(-50%) translateY(${toast.show?0:80}px)`,background:'#0f2266',color:'#fff',padding:'12px 28px',borderRadius:50,fontFamily:'Montserrat,sans-serif',fontWeight:600,fontSize:'0.85rem',border:'2px solid #4a72e8',boxShadow:'0 8px 32px rgba(15,34,102,0.35)',zIndex:9999,transition:'transform 0.35s ease',pointerEvents:'none'}}>
+        {toast.msg}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
