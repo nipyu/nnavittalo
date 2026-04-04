@@ -999,22 +999,18 @@ async function confirmBooking() {
   // 2. If NOT logged in, show Login Modal and stop
   if (!user) {
     showToast("⚠️ Please Log In to finish your booking!");
-    
-    // Open your existing Auth Modal
     const authModal = document.getElementById('authModal');
-    if (authModal) {
-      authModal.style.display = 'flex'; 
-    }
-    
-    // Close the current trip modal so they can focus on logging in
+    if (authModal) authModal.style.display = 'flex'; 
     closeModal(); 
     return;
   }
 
-  // 3. Get values from the inputs (using the IDs from your UI)
+  // 3. Get values from the inputs
   const fullName = document.getElementById('bookName').value.trim();
   const phone = document.getElementById('bookPhone').value.trim();
-  const guests = document.getElementById('bookGuests').value;
+  
+  // Get the guest count from the dropdown
+  const guestCount = parseInt(document.getElementById('bookGuests').value) || 1;
 
   // 4. MANDATORY CHECK: stop if fields are empty
   if (!fullName || !phone) {
@@ -1022,8 +1018,12 @@ async function confirmBooking() {
     return; 
   }
 
+  // --- NEW: Calculate Total Prices based on your Fixed Inputs ---
+  const totalPln = currentTrip.price * guestCount;
+  const totalEur = currentTrip.priceEur * guestCount;
+
   // 5. Save the booking to Supabase
-  // Ensure your table has: customer_name, phone_number, and booking_date columns
+  // Ensure your Supabase table has these columns: guests, total_price_pln, total_price_eur
   const { error } = await _supabase
     .from('bookings')
     .insert([
@@ -1033,6 +1033,9 @@ async function confirmBooking() {
         event_name: currentTrip.title, 
         customer_name: fullName, 
         phone_number: phone,      
+        guests: guestCount,                // <--- Added
+        total_price_pln: totalPln,         // <--- Added
+        total_price_eur: totalEur,         // <--- Added
         booking_date: new Date().toISOString().split('T')[0],
         status: 'pending' 
       }
@@ -1045,21 +1048,17 @@ async function confirmBooking() {
     // 6. SUCCESS STATE
     showToast("🎉 Booking confirmed! Check 'My Adventures' for details.");
 
-    // Disable the button so they don't click twice
     const btn = document.querySelector('.btn-book-modal');
     if(btn) {
         btn.disabled = true;
         btn.innerText = "✅ Confirmed";
     }
 
-    // 7. Wait 5 seconds before closing the modal (No redirect)
+    // 7. Wait 5 seconds before closing
     setTimeout(() => {
       closeModal();
-      
-      // Refresh the session UI to ensure the profile button is updated
       if (typeof checkUserSession === "function") checkUserSession();
-      
-    }, 5000); 
+    }, 1500); 
   }
 }
 
