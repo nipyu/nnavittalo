@@ -221,11 +221,7 @@ button{cursor:pointer;font-family:inherit}
   position: fixed;
   bottom: 28px;
   left: 50%;
-  /* Added opacity 0 and visibility hidden so it is truly gone when not active */
-  opacity: 0;
-  visibility: hidden; 
-  transform: translateX(-50%) translateY(80px);
-  
+  transform: translateX(-50%) translateY(80px); /* Start off-screen */
   background: #0f2266;
   color: #fff;
   padding: 12px 28px;
@@ -236,15 +232,19 @@ button{cursor:pointer;font-family:inherit}
   border: 2px solid #4a72e8;
   box-shadow: 0 8px 32px rgba(15, 34, 102, .35);
   z-index: 9999;
-  /* Added opacity and visibility to the transition */
-  transition: transform .35s ease, opacity .35s ease, visibility .35s ease;
+  
+  /* --- CRITICAL ADDITIONS BELOW --- */
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transition: transform .35s ease, opacity .35s ease, visibility .35s ease;
 }
 
 .toast.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
   visibility: visible;
+  /* Allow clicking if needed, though usually none is safer */
 }
 
 @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
@@ -1093,13 +1093,27 @@ if (document.activeElement) {
   }
 }
 
-let toastTimer;
+let toastTimer = null; // Ensure this is declared at the top of your script
+
 function showToast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  if (!el) return;
+
+  // 1. Force stop any current animations/timers
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('show'), 4000);
+  el.classList.remove('show');
+  
+  // 2. Small delay to allow the browser to register the "reset" 
+  // before showing it again
+  setTimeout(() => {
+    el.textContent = msg;
+    el.classList.add('show');
+
+    // 3. Set the timer to hide it after 3 seconds
+    toastTimer = setTimeout(() => {
+      el.classList.remove('show');
+    }, 3000);
+  }, 50); 
 }
 
 function subscribeNewsletter() {
