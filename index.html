@@ -217,8 +217,35 @@ button{cursor:pointer;font-family:inherit}
 .trust-box{background:#e8eefb;border-radius:10px;padding:14px;font-size:.8rem;color:#2952c8;font-weight:600;text-align:center}
 
 /* TOAST */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#0f2266;color:#fff;padding:12px 28px;border-radius:50px;font-family:'Montserrat',sans-serif;font-weight:600;font-size:.85rem;border:2px solid #4a72e8;box-shadow:0 8px 32px rgba(15,34,102,.35);z-index:9999;transition:transform .35s ease;pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  /* Added opacity 0 and visibility hidden so it is truly gone when not active */
+  opacity: 0;
+  visibility: hidden; 
+  transform: translateX(-50%) translateY(80px);
+  
+  background: #0f2266;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: .85rem;
+  border: 2px solid #4a72e8;
+  box-shadow: 0 8px 32px rgba(15, 34, 102, .35);
+  z-index: 9999;
+  /* Added opacity and visibility to the transition */
+  transition: transform .35s ease, opacity .35s ease, visibility .35s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 
@@ -1047,7 +1074,9 @@ async function confirmBooking() {
   } else {
     // 6. SUCCESS STATE
     showToast("🎉 Booking confirmed! Check 'My Adventures' for details.");
-
+if (document.activeElement) {
+        document.activeElement.blur();
+    }
     const btn = document.querySelector('.btn-book-modal');
     if(btn) {
         btn.disabled = true;
@@ -1057,6 +1086,8 @@ async function confirmBooking() {
     // 7. Wait 5 seconds before closing
     setTimeout(() => {
       closeModal();
+      // 4. Force the window back to the top-left to reset the zoom/offset
+      window.scrollTo(0, 0);
       if (typeof checkUserSession === "function") checkUserSession();
     }, 1500); 
   }
