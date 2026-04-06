@@ -440,7 +440,7 @@ button{cursor:pointer;font-family:inherit}
     <a href="#about" onclick="closeMobileMenu()">ℹ️ About Us</a>
     <a href="#contact" onclick="closeMobileMenu()">📞 Contact</a>
     <div class="mobile-menu-btns">
-      <button class="btn-outline" style="border-radius:6px" onclick="showToast('Please visit our website to log in.')">Log In</button>
+      <button class="btn-outline" style="border-radius:6px" onclick="closeMobileMenu(); document.getElementById('authModal').style.display='flex'">Log In</button>
       <button class="btn-solid" style="border-radius:6px" onclick="closeMobileMenu();document.querySelector('#packages').scrollIntoView({behavior:'smooth'})">Book a Trip</button>
     </div>
   </div>
